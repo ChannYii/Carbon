@@ -1,0 +1,1529 @@
+<!doctype html>
+<html lang="zh-Hant" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self' 'unsafe-inline' data:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline';">
+<meta name="referrer" content="no-referrer">
+<title>遊戲王國 Game Kingdom</title>
+<style>
+:root {
+  --bg-top: #0b0f19;
+  --bg-bottom: #020617;
+  --glass-bg: rgba(22, 30, 49, 0.75);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --glass-highlight: rgba(255, 255, 255, 0.25);
+  --glass-blur: blur(28px) saturate(180%);
+  --ink: #e2e8f0;
+  --ink-bright: #ffffff;
+  --muted: #94a3b8;
+  --accent: #38bdf8;
+  --accent-glow: rgba(56, 189, 248, 0.45);
+  --shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.6), 0 0 30px rgba(56, 189, 248, 0.12);
+  --card-bg: rgba(30, 41, 59, 0.6);
+  --canvas-bg: #0f172a;
+  --nav-bg: rgba(11, 15, 25, 0.9);
+}
+
+[data-theme="light"] {
+  --bg-top: #e0f2fe;
+  --bg-bottom: #f1f5f9;
+  --glass-bg: rgba(255, 255, 255, 0.82);
+  --glass-border: rgba(203, 213, 225, 0.8);
+  --glass-highlight: rgba(255, 255, 255, 0.95);
+  --ink: #334155;
+  --ink-bright: #0f172a;
+  --muted: #64748b;
+  --accent: #0284c7;
+  --accent-glow: rgba(2, 132, 199, 0.25);
+  --shadow: 0 15px 35px -8px rgba(0, 0, 0, 0.12), 0 0 20px rgba(2, 132, 199, 0.12);
+  --card-bg: rgba(255, 255, 255, 0.88);
+  --canvas-bg: #ffffff;
+  --nav-bg: rgba(255, 255, 255, 0.92);
+}
+
+* {
+  box-sizing: border-box;
+  -webkit-tap-highlight-color: transparent;
+  -webkit-touch-callout: none;
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+body, .panel, .game-card, .bottom-nav, button, select, .modalbox, .status, .hero, .user-badge, .nav-item {
+  transition: background 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
+              background-color 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
+              color 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
+              border-color 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
+              box-shadow 0.4s cubic-bezier(0.25, 0.8, 0.25, 1),
+              transform 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+}
+
+body {
+  margin: 0;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) calc(env(safe-area-inset-bottom) + 70px) env(safe-area-inset-left);
+  min-height: 100vh;
+  background: radial-gradient(circle at 20% 10%, rgba(56,189,248,0.12) 0%, transparent 40%),
+              radial-gradient(circle at 80% 90%, rgba(168,85,247,0.12) 0%, transparent 40%),
+              linear-gradient(135deg, var(--bg-top), var(--bg-bottom));
+  font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", "SF Pro Text", "Helvetica Neue", sans-serif;
+  color: var(--ink);
+  overflow-x: hidden;
+}
+
+button, select { font: inherit; }
+button { border: 0; cursor: pointer; }
+button:active { transform: scale(0.95); }
+
+.app { width: min(1180px, 94vw); margin: 12px auto 30px; }
+
+/* Splash Screen */
+.splash-screen {
+  position: fixed; inset: 0; z-index: 999;
+  background: radial-gradient(circle at center, #1e1b4b 0%, #020617 100%);
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  color: #fff; text-align: center; padding: 20px;
+}
+.splash-screen.fade-out {
+  opacity: 0; pointer-events: none; transition: opacity 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+}
+.splash-crown {
+  font-size: 72px; margin-bottom: 12px; filter: drop-shadow(0 0 25px rgba(56, 189, 248, 0.8));
+  animation: float 2.5s ease-in-out infinite, pulse 2s ease-in-out infinite;
+}
+.splash-title {
+  font-size: clamp(32px, 6vw, 52px); font-weight: 900; letter-spacing: 1px; margin: 0;
+  background: linear-gradient(135deg, #38bdf8, #a855f7, #f43f5e);
+  -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+}
+.splash-subtitle { color: #94a3b8; font-size: 16px; margin: 10px 0 32px; font-weight: 500; letter-spacing: 0.5px; }
+.splash-btn {
+  padding: 16px 48px; border-radius: 30px; font-size: 18px; font-weight: 800;
+  background: linear-gradient(135deg, #38bdf8, #0284c7); color: #fff;
+  box-shadow: 0 10px 30px rgba(56, 189, 248, 0.45);
+}
+.splash-btn:hover { transform: scale(1.04); box-shadow: 0 15px 35px rgba(56, 189, 248, 0.6); }
+
+/* Glass Panel */
+.panel {
+  background: var(--glass-bg);
+  -webkit-backdrop-filter: var(--glass-blur);
+  backdrop-filter: var(--glass-blur);
+  border: 1px solid var(--glass-border);
+  border-radius: 32px;
+  box-shadow: var(--shadow);
+  padding: 24px;
+  position: relative;
+  overflow: hidden;
+}
+
+.hidden { display: none !important; }
+
+/* Header & HUD */
+header { display: flex; justify-content: space-between; align-items: center; gap: 14px; flex-wrap: wrap; }
+.logo { display: flex; align-items: center; gap: 12px; }
+.crown {
+  width: 52px; height: 52px; border-radius: 18px;
+  background: linear-gradient(135deg, #38bdf8, #8b5cf6);
+  display: grid; place-items: center; color: #fff; font-size: 26px;
+  box-shadow: 0 8px 20px var(--accent-glow);
+  animation: float 3s ease-in-out infinite;
+}
+.brand h1 { font-size: clamp(22px, 3.8vw, 36px); line-height: 1; margin: 0; color: var(--ink-bright); font-weight: 900; letter-spacing: -0.5px; }
+.brand p { margin: 4px 0 0; color: var(--muted); font-size: 13px; }
+
+/* 手遊 Lobby HUD 玩家資訊 */
+.user-hud { display: flex; align-items: center; gap: 10px; }
+.user-badge {
+  display: flex; align-items: center; gap: 10px;
+  padding: 6px 14px; border-radius: 22px;
+  background: rgba(255, 255, 255, 0.08); border: 1px solid var(--glass-border);
+  font-size: 13px; font-weight: 700; color: var(--ink-bright);
+}
+.clickable-hud {
+  cursor: pointer;
+  transition: transform 0.2s cubic-bezier(0.25, 0.8, 0.25, 1), background 0.2s ease;
+}
+.clickable-hud:hover {
+  transform: translateY(-2px) scale(1.03);
+  background: rgba(255, 255, 255, 0.16) !important;
+}
+
+/* 頭像與動態頭像框樣式 */
+.user-avatar-box {
+  position: relative; display: flex; align-items: center; justify-content: center;
+  border-radius: 50%; background: rgba(255, 255, 255, 0.1);
+  transition: all 0.3s ease; box-sizing: border-box; flex-shrink: 0;
+}
+.user-avatar-icon { line-height: 1; user-select: none; }
+
+.frame-none { border: 2px solid var(--glass-border); }
+.frame-wood {
+  border: 3px solid #b45309;
+  box-shadow: 0 0 8px rgba(180, 83, 9, 0.5);
+}
+.frame-silver {
+  border: 3px solid #94a3b8;
+  box-shadow: 0 0 10px rgba(148, 163, 184, 0.7);
+  animation: pulseFrame 2.5s infinite ease-in-out;
+}
+.frame-gold {
+  border: 3px solid #f59e0b;
+  box-shadow: 0 0 12px rgba(245, 158, 11, 0.85);
+  animation: pulseFrame 2s infinite ease-in-out;
+}
+.frame-diamond {
+  border: 3px solid #38bdf8;
+  box-shadow: 0 0 15px rgba(56, 189, 248, 0.9);
+  animation: pulseFrame 1.5s infinite ease-in-out;
+}
+.frame-dragon {
+  border: 3px solid #ef4444;
+  background: linear-gradient(135deg, rgba(239, 68, 68, 0.25), rgba(168, 85, 247, 0.25));
+  box-shadow: 0 0 15px rgba(239, 68, 68, 0.9), 0 0 20px rgba(168, 85, 247, 0.6);
+  animation: pulseFrame 1.2s infinite ease-in-out;
+}
+
+@keyframes pulseFrame {
+  0%, 100% { transform: scale(1); filter: brightness(1); }
+  50% { transform: scale(1.04); filter: brightness(1.25); }
+}
+
+.coin-badge { color: #f59e0b; background: rgba(245, 158, 11, 0.12); border-color: rgba(245, 158, 11, 0.3); }
+
+.tools { display: flex; gap: 8px; align-items: center; }
+.tools select, .btn {
+  padding: 10px 16px; border-radius: 16px; border: 1px solid var(--glass-border);
+  background: rgba(255, 255, 255, 0.06); color: var(--ink-bright);
+  font-size: 13px; font-weight: 700;
+  -webkit-backdrop-filter: blur(12px); backdrop-filter: blur(12px);
+}
+.tools select { outline: none; cursor: pointer; }
+.tools select option { background: var(--bg-top); color: var(--ink-bright); }
+.tools select:focus, .btn:hover { background: rgba(255, 255, 255, 0.18); border-color: var(--accent); }
+.btn.primary { background: linear-gradient(135deg, #38bdf8, #0284c7); color: #fff; border: 0; box-shadow: 0 4px 18px var(--accent-glow); }
+.btn.primary:hover { transform: translateY(-2px); box-shadow: 0 8px 24px var(--accent-glow); }
+.btn.secondary { background: rgba(255, 255, 255, 0.08); color: var(--ink-bright); }
+
+/* Hero Banner */
+.hero {
+  margin: 20px 0 12px; padding: 22px 26px; border-radius: 26px;
+  background: linear-gradient(120deg, rgba(56, 189, 248, 0.15), rgba(168, 85, 247, 0.15));
+  border: 1px solid var(--glass-border); color: var(--ink-bright);
+  display: flex; justify-content: space-between; align-items: center; gap: 16px;
+  animation: slideDown 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.hero h2 { font-size: clamp(20px, 3.2vw, 30px); margin: 0; color: var(--ink-bright); font-weight: 800; }
+.hero p { opacity: 0.9; font-size: 14px; margin: 6px 0 0; color: var(--ink); }
+.hero .emoji { font-size: 56px; filter: drop-shadow(0 8px 12px rgba(0,0,0,0.3)); }
+
+/* Category Section */
+.category-section { margin-top: 24px; animation: fadeIn 0.6s ease-out; }
+.section-title { display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding: 0 4px; }
+.section-title h2 { margin: 0; font-size: 19px; color: var(--ink-bright); font-weight: 800; display: flex; align-items: center; gap: 8px; }
+
+.swipe-container {
+  display: flex; gap: 16px; overflow-x: auto; padding: 6px 4px 16px 4px;
+  scroll-snap-type: x mandatory; -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.swipe-container::-webkit-scrollbar { display: none; }
+
+.game-card {
+  flex: 0 0 clamp(230px, 64vw, 270px);
+  scroll-snap-align: start;
+  background: var(--card-bg); border: 1px solid var(--glass-border); border-radius: 22px;
+  padding: 20px; min-height: 200px; display: flex; flex-direction: column; justify-content: space-between;
+  position: relative; overflow: hidden;
+}
+.game-card .icon { font-size: 40px; margin-bottom: 6px; }
+.game-card h3 { font-size: 18px; margin: 0 0 4px; color: var(--ink-bright); font-weight: 800; }
+.game-card p { margin: 0; color: var(--muted); font-size: 13px; line-height: 1.4; }
+.game-card .play-btn {
+  width: 100%; margin-top: 12px; padding: 11px; border-radius: 14px;
+  background: linear-gradient(135deg, rgba(56, 189, 248, 0.2), rgba(2, 132, 199, 0.3));
+  color: #fff; font-weight: 800; font-size: 14px; letter-spacing: 0.5px;
+  border: 1px solid rgba(56, 189, 248, 0.4);
+}
+.game-card:hover {
+  transform: translateY(-5px) scale(1.02);
+  border-color: var(--accent);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.3), 0 0 20px var(--accent-glow);
+}
+.game-card:hover .play-btn {
+  background: linear-gradient(135deg, #38bdf8, #0284c7);
+  box-shadow: 0 4px 15px var(--accent-glow);
+}
+
+/* Bottom Mobile App Navigation Bar */
+.bottom-nav {
+  position: fixed; bottom: 0; left: 0; right: 0; height: 62px;
+  background: var(--nav-bg); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid var(--glass-border);
+  display: flex; justify-content: space-around; align-items: center; z-index: 80;
+  box-shadow: 0 -10px 25px rgba(0,0,0,0.2);
+}
+.nav-item {
+  background: transparent; color: var(--muted); font-size: 11px; font-weight: 700;
+  display: flex; flex-direction: column; align-items: center; gap: 3px; border: 0; padding: 6px 16px;
+  border-radius: 16px;
+}
+.nav-item .nav-icon { font-size: 18px; }
+.nav-item.active { color: var(--accent); background: rgba(56, 189, 248, 0.1); }
+
+/* 右下角版本號碼樣式 */
+.app-version {
+  position: fixed;
+  bottom: 8px;
+  right: 14px;
+  font-size: 11px;
+  font-weight: 700;
+  color: var(--muted);
+  opacity: 0.75;
+  z-index: 90;
+  pointer-events: none;
+  letter-spacing: 0.5px;
+}
+
+/* Game Panel */
+#gamePanel { margin-top: 16px; }
+.game-head { display: flex; justify-content: space-between; gap: 14px; align-items: center; flex-wrap: wrap; }
+.game-head h2 { font-size: 28px; margin: 0; color: var(--ink-bright); font-weight: 900; letter-spacing: -0.5px; }
+.game-head p { color: var(--muted); margin: 3px 0 0; font-size: 13px; }
+.status {
+  margin: 16px 0 12px; padding: 12px 18px; border-radius: 18px;
+  background: rgba(0, 0, 0, 0.25); border: 1px solid var(--glass-border);
+  text-align: center; font-weight: 800; color: var(--accent); font-size: 17px;
+  letter-spacing: 0.5px; backdrop-filter: blur(10px);
+}
+.mode { display: flex; justify-content: center; gap: 10px; align-items: center; margin: 12px 0; flex-wrap: wrap; }
+.stage { min-height: 420px; display: grid; place-items: center; padding: 8px; }
+
+canvas { max-width: 100%; border-radius: 20px; box-shadow: 0 15px 35px rgba(0,0,0,0.3); background: var(--canvas-bg); border: 1px solid var(--glass-border); touch-action: none; }
+.mini-controls { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; margin-top: 16px; }
+
+/* Gomoku */
+.board15 {
+  display: grid; grid-template-columns: repeat(15, 1fr); width: min(92vw, 540px); aspect-ratio: 1;
+  background: #d4a373; padding: 8px; border-radius: 20px; gap: 0;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.4); border: 5px solid #a3713f;
+}
+.stone { border: 0; background: transparent; position: relative; cursor: pointer; padding: 0; }
+.stone:before { content: ""; position: absolute; inset: 0; border-top: 1px solid #8b5e34; border-left: 1px solid #8b5e34; }
+.stone span { position: absolute; width: 85%; height: 85%; border-radius: 50%; left: 7.5%; top: 7.5%; z-index: 2; transition: transform 0.2s; }
+.stone.black span { background: radial-gradient(circle at 35% 35%, #555, #000); box-shadow: 2px 5px 10px rgba(0,0,0,0.7); }
+.stone.white span { background: radial-gradient(circle at 35% 35%, #fff, #ddd); box-shadow: 2px 5px 10px rgba(0,0,0,0.5); }
+
+/* Tic-Tac-Toe */
+.ttt { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; width: min(90vw, 350px); }
+.ttt button { aspect-ratio: 1; border-radius: 20px; background: var(--card-bg); font-size: 56px; font-weight: 900; color: var(--ink-bright); border: 1px solid var(--glass-border); }
+
+/* Connect Four */
+.connect { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; background: #1e3a8a; padding: 14px; border-radius: 22px; width: min(94vw, 480px); border: 4px solid #1d4ed8; }
+.connect button { aspect-ratio: 1; border-radius: 50%; background: #0f172a; border: 0; cursor: pointer; }
+.connect .r { background: radial-gradient(circle at 35% 35%, #ff4b4b, #990000); }
+.connect .y { background: radial-gradient(circle at 35% 35%, #ffea00, #b79400); }
+
+/* Memory Match */
+.memory { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; width: min(94vw, 440px); }
+.memory button {
+  aspect-ratio: 1; border-radius: 16px; background: var(--card-bg); color: transparent;
+  font-size: 34px; border: 1px solid var(--glass-border); transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+.memory button.open, .memory button.done { background: rgba(56, 189, 248, 0.25); color: var(--ink-bright); transform: rotateY(180deg); }
+.memory button.done { border-color: var(--accent); opacity: 0.75; }
+
+/* Slide Puzzle */
+.puzzle { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; width: min(90vw, 350px); aspect-ratio: 1; }
+.puzzle button { background: var(--card-bg); border-radius: 18px; font-size: 30px; font-weight: 800; color: var(--accent); border: 1px solid var(--glass-border); }
+.puzzle button.blank { opacity: 0.05; background: transparent; }
+
+/* Battleship */
+.battle { display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; width: min(92vw, 420px); }
+.cell { aspect-ratio: 1; border-radius: 6px; background: var(--card-bg); border: 1px solid var(--glass-border); color: var(--ink-bright); font-size: 11px; }
+.cell.hit { background: #ef4444; box-shadow: 0 0 10px #ef4444; }
+.cell.miss { background: #1e293b; position: relative; }
+.cell.miss:after { content: "•"; font-size: 22px; color: var(--muted); position: absolute; inset: 0; display: grid; place-items: center; }
+
+/* Chess */
+.chess { display: grid; grid-template-columns: repeat(8, 1fr); width: min(90vw, 460px); aspect-ratio: 1; border: 4px solid rgba(255,255,255,0.2); border-radius: 16px; overflow: hidden; }
+.chess button { font-size: clamp(20px, 4.8vw, 40px); display: grid; place-items: center; border: 0; }
+.chess .light { background: #e2e8f0; color: #0f172a; }
+.chess .dark { background: #475569; color: #fff; }
+.chess .selected { outline: 4px solid var(--accent); outline-offset: -4px; }
+
+/* Reversi */
+.reversi { display: grid; grid-template-columns: repeat(8, 1fr); gap: 4px; background: #065f46; padding: 10px; width: min(90vw, 460px); aspect-ratio: 1; border-radius: 16px; }
+.revcell { background: #047857; position: relative; border: 0; border-radius: 6px; cursor: pointer; }
+.revcell:after { content: ""; position: absolute; width: 80%; height: 80%; border-radius: 50%; left: 10%; top: 10%; }
+.revcell.b:after { background: radial-gradient(circle at 35% 35%, #555, #000); }
+.revcell.w:after { background: radial-gradient(circle at 35% 35%, #fff, #ccc); }
+
+/* Sudoku */
+.sudoku { display: grid; grid-template-columns: repeat(9, 1fr); width: min(94vw, 440px); aspect-ratio: 1; border: 3px solid var(--accent); border-radius: 12px; overflow: hidden; }
+.sudoku button { border: 1px solid var(--glass-border); background: var(--card-bg); color: var(--ink-bright); font-size: clamp(15px, 3.2vw, 22px); }
+.sudoku button.given { font-weight: 900; color: var(--accent); background: rgba(56, 189, 248, 0.15); }
+.sudoku button:nth-child(3n) { border-right: 2px solid var(--accent); }
+.sudoku button:nth-child(n+19):nth-child(-n+27), .sudoku button:nth-child(n+46):nth-child(-n+54) { border-bottom: 2px solid var(--accent); }
+
+/* 2048 Game */
+.g2048 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; width: min(90vw, 360px); aspect-ratio: 1; background: var(--card-bg); padding: 10px; border-radius: 18px; border: 1px solid var(--glass-border); }
+.tile2048 { display: grid; place-items: center; border-radius: 12px; font-size: clamp(16px, 3.8vw, 26px); font-weight: 800; background: rgba(255,255,255,0.08); color: var(--ink-bright); }
+.tile2048[data-v="2"] { background: #eee4da; color: #776e65; }
+.tile2048[data-v="4"] { background: #ede0c8; color: #776e65; }
+.tile2048[data-v="8"] { background: #f2b179; color: #f9f6f2; }
+.tile2048[data-v="16"] { background: #f59563; color: #f9f6f2; }
+.tile2048[data-v="32"] { background: #f67c5f; color: #f9f6f2; }
+.tile2048[data-v="64"] { background: #f65e3b; color: #f9f6f2; }
+.tile2048[data-v="128"], .tile2048[data-v="256"], .tile2048[data-v="512"], .tile2048[data-v="1024"], .tile2048[data-v="2048"] { background: var(--accent); color: #0f172a; box-shadow: 0 0 15px var(--accent-glow); }
+
+/* Minesweeper */
+.mines { display: grid; grid-template-columns: repeat(9, 1fr); gap: 4px; width: min(92vw, 400px); aspect-ratio: 1; background: rgba(0,0,0,0.2); padding: 8px; border-radius: 16px; border: 1px solid var(--glass-border); }
+.mcell { border-radius: 6px; background: var(--card-bg); border: 0; font-size: 16px; font-weight: 700; color: var(--ink-bright); display: grid; place-items: center; }
+.mcell.open { background: rgba(255,255,255,0.05); }
+.mcell.mine { background: #ef4444; }
+
+/* Whack-A-Mole */
+.moles { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; width: min(90vw, 340px); }
+.mole-hole { aspect-ratio: 1; border-radius: 50%; background: #1e293b; border: 4px solid #334155; display: grid; place-items: center; font-size: 44px; position: relative; overflow: hidden; cursor: pointer; }
+.mole-hole.active:after { content: "🐹"; animation: popUp 0.2s ease-out; }
+
+/* Modals */
+.modal { position: fixed; inset: 0; background: rgba(2, 6, 23, 0.85); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); display: grid; place-items: center; padding: 20px; z-index: 100; animation: fadeIn 0.25s; }
+.modalbox {
+  width: min(90vw, 420px); background: linear-gradient(145deg, rgba(30, 41, 59, 0.95), rgba(15, 23, 42, 0.98));
+  border: 1px solid var(--glass-border); border-radius: 32px; padding: 28px 24px; box-shadow: var(--shadow); text-align: center; color: var(--ink-bright);
+}
+.modal-stars { font-size: 32px; margin-bottom: 8px; letter-spacing: 4px; filter: drop-shadow(0 0 10px rgba(245, 158, 11, 0.6)); }
+.modalbox h2 { margin: 0; color: var(--ink-bright); font-size: 24px; font-weight: 900; }
+.modal-desc { color: var(--ink); line-height: 1.5; font-size: 14px; background: rgba(255, 255, 255, 0.05); padding: 14px; border-radius: 16px; margin: 16px 0 22px; border: 1px solid var(--glass-border); white-space: pre-wrap; }
+.modal-actions { display: flex; flex-direction: column; gap: 10px; }
+.game-btn-large {
+  width: 100%; padding: 14px; border-radius: 20px; font-size: 16px; font-weight: 800;
+  letter-spacing: 0.5px; display: flex; justify-content: center; align-items: center; gap: 8px;
+}
+
+/* Avatar & Frame Selector Layout */
+.avatar-grid {
+  display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; margin: 12px 0;
+}
+.avatar-item {
+  font-size: 26px; padding: 8px 0; border-radius: 14px; background: rgba(255,255,255,0.06);
+  border: 1px solid var(--glass-border); cursor: pointer; text-align: center;
+  transition: transform 0.2s, background 0.2s, border-color 0.2s;
+}
+.avatar-item:hover, .avatar-item.active {
+  background: rgba(56, 189, 248, 0.25); border-color: var(--accent); transform: scale(1.1);
+}
+
+.frame-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 10px; margin: 12px 0;
+}
+.frame-item {
+  padding: 10px 6px; border-radius: 16px; background: rgba(255,255,255,0.06);
+  border: 1px solid var(--glass-border); cursor: pointer; display: flex; flex-direction: column;
+  align-items: center; gap: 6px; font-size: 12px; font-weight: 700; text-align: center;
+  transition: transform 0.2s, border-color 0.2s, background 0.2s;
+}
+.frame-item:hover { transform: translateY(-3px); }
+.frame-item.active {
+  border-color: var(--accent); background: rgba(56, 189, 248, 0.2); box-shadow: 0 0 12px var(--accent-glow);
+}
+.frame-item.locked { opacity: 0.5; cursor: not-allowed; filter: grayscale(0.8); }
+
+/* Leaderboard Table */
+.rank-table { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 13px; }
+.rank-table th, .rank-table td { padding: 10px 8px; text-align: center; border-bottom: 1px solid var(--glass-border); }
+.rank-table th { color: var(--accent); font-weight: 800; background: rgba(255,255,255,0.04); }
+.rank-row-user { background: rgba(56, 189, 248, 0.18) !important; font-weight: 800; color: var(--ink-bright); }
+.rank-badge-1 { color: #f59e0b; font-weight: 900; font-size: 16px; }
+.rank-badge-2 { color: #94a3b8; font-weight: 900; font-size: 15px; }
+.rank-badge-3 { color: #b45309; font-weight: 900; font-size: 15px; }
+
+.stat-card-group { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin: 14px 0; }
+.stat-card { background: rgba(255,255,255,0.05); border: 1px solid var(--glass-border); border-radius: 16px; padding: 10px; text-align: center; }
+.stat-card .val { font-size: 18px; font-weight: 900; color: var(--accent); margin-top: 2px; }
+.stat-card .lbl { font-size: 11px; color: var(--muted); }
+
+/* Loading Overlay */
+.loading-overlay {
+  position: fixed; inset: 0; background: var(--bg-top);
+  backdrop-filter: blur(24px); -webkit-backdrop-filter: blur(24px);
+  display: flex; flex-direction: column; justify-content: center; align-items: center;
+  z-index: 200; opacity: 1; transition: opacity 0.35s cubic-bezier(0.25, 1, 0.5, 1);
+}
+.loading-overlay.fade-out { opacity: 0; pointer-events: none; }
+.loading-box { text-align: center; padding: 36px; border-radius: 32px; background: var(--glass-bg); border: 1px solid var(--glass-border); width: min(88vw, 360px); box-shadow: var(--shadow); }
+.loading-crown { font-size: 52px; animation: pulse 1.5s ease-in-out infinite; margin-bottom: 12px; }
+.loading-title { font-size: 20px; font-weight: 900; color: var(--ink-bright); margin: 0 0 8px; }
+.loading-tip { font-size: 13px; color: var(--muted); margin-bottom: 20px; min-height: 38px; line-height: 1.4; }
+.loading-bar-bg { width: 100%; height: 6px; background: rgba(255, 255, 255, 0.1); border-radius: 10px; overflow: hidden; }
+.loading-bar { width: 0%; height: 100%; background: linear-gradient(90deg, var(--accent), #a855f7); border-radius: 10px; transition: width 0.35s ease; }
+
+@keyframes fadeIn { from { opacity: 0; transform: translateY(12px) scale(0.98); } to { opacity: 1; transform: translateY(0) scale(1); } }
+@keyframes slideDown { from { opacity: 0; transform: translateY(-16px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-8px); } }
+@keyframes pulse { 0%, 100% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.12); opacity: 0.85; } }
+@keyframes popUp { from { transform: translateY(20px) scale(0.5); } to { transform: translateY(0) scale(1); } }
+
+@media(max-width: 600px) {
+  .panel { padding: 18px; border-radius: 26px; }
+  .hero { padding: 18px; }
+  .hero .emoji { display: none; }
+  .user-badge span.text { display: none; }
+}
+</style>
+</head>
+<body>
+
+<!-- Splash Screen -->
+<div id="splashScreen" class="splash-screen">
+  <div class="splash-crown">♛</div>
+  <h1 class="splash-title">GAME KINGDOM</h1>
+  <p class="splash-subtitle" id="splashSub">全能對局與休閒遊戲天地</p>
+  <button id="splashStartBtn" class="splash-btn">
+    <span id="splashBtnText">進入遊戲王國</span>
+  </button>
+</div>
+
+<div class="app">
+  <section id="home" class="panel">
+    <header>
+      <div class="logo">
+        <div class="crown">♛</div>
+        <div class="brand">
+          <h1 id="brand">遊戲王國</h1>
+          <p id="tagline">一個地方，玩遍你喜歡的遊戲</p>
+        </div>
+      </div>
+      
+      <!-- 手遊 Lobby HUD 玩家資訊 (可點擊進行個人裝備與名稱設定) -->
+      <div class="user-hud">
+        <div class="user-badge clickable-hud" id="hudProfileBtn" onclick="openProfileModal()" title="點擊切換頭像、頭像框與修改名稱">
+          <div class="user-avatar-box frame-gold" id="hudAvatarBox" style="width: 32px; height: 32px;">
+            <span class="user-avatar-icon" id="hudAvatarIcon" style="font-size: 18px;">👤</span>
+          </div>
+          <div style="display: flex; flex-direction: column; align-items: flex-start; margin-left: 2px;">
+            <span id="hudPlayerName" style="font-weight: 800; font-size: 12px; line-height: 1.1; color: var(--ink-bright);">號令天下玩家</span>
+            <div style="display: flex; gap: 6px; align-items: center; margin-top: 2px;">
+              <span class="text" id="hudLevelText" style="font-weight: 900; line-height: 1.1; font-size: 11px;">LV.1</span>
+              <span id="hudMedalText" style="font-size: 11px; color: #fbbf24; font-weight: 800;">🥇 0</span>
+            </div>
+          </div>
+        </div>
+        <div class="user-badge coin-badge clickable-hud" onclick="openProfileModal()" title="查看個人資產">
+          <span>🪙</span>
+          <span id="hudCoinText">100</span>
+        </div>
+      </div>
+
+      <div class="tools">
+        <button id="themeToggle" class="btn secondary">深色模式</button>
+        <select id="lang">
+          <option value="zh-TW">繁體中文</option>
+          <option value="zh-CN">简体中文</option>
+          <option value="en">English</option>
+          <option value="ja">日本語</option>
+          <option value="ko">한국어</option>
+        </select>
+      </div>
+    </header>
+
+    <div class="hero">
+      <div><h2 id="heroTitle">歡迎來到遊戲王國</h2><p id="heroText">選擇你喜愛的遊戲，擊敗 AI 或與好友同樂！</p></div>
+      <div class="emoji">🎮✨</div>
+    </div>
+
+    <!-- Category Showcase Area -->
+    <div id="showcaseArea"></div>
+  </section>
+
+  <section id="gamePanel" class="panel hidden">
+    <div class="game-head">
+      <div><h2 id="gameName"></h2><p id="gameDesc"></p></div>
+      <div class="game-actions">
+        <button class="btn" id="back">← <span id="backText">首頁</span></button>
+        <button class="btn secondary" id="rules">?</button>
+        <button class="btn primary" id="restart">↻ <span id="restartText">新局</span></button>
+      </div>
+    </div>
+    <div id="modeBox" class="mode">
+      <span id="modeLabel">模式</span>
+      <select id="mode"><option value="ai">AI 對局</option><option value="pvp">雙人對局</option></select>
+      <span id="difficultyLabel">難度</span>
+      <select id="difficulty"><option value="easy">簡單</option><option value="normal" selected>普通</option><option value="hard">困難</option></select>
+    </div>
+    <div id="status" class="status"></div>
+    <div id="stage" class="stage"></div>
+  </section>
+</div>
+
+<!-- Bottom Mobile App Navigation Bar -->
+<nav class="bottom-nav">
+  <button class="nav-item active" id="btnNavHome" onclick="home()">
+    <span class="nav-icon">🏠</span>
+    <span id="navHome">遊戲大廳</span>
+  </button>
+  <button class="nav-item" id="btnNavRandom" onclick="openRandomGame()">
+    <span class="nav-icon">🎲</span>
+    <span id="navRandom">隨機對局</span>
+  </button>
+  <button class="nav-item" id="btnNavRank" onclick="showHonorModal()">
+    <span class="nav-icon">🏆</span>
+    <span id="navRank">榮譽榜</span>
+  </button>
+</nav>
+
+<!-- 右下角版本顯示 -->
+<div class="app-version">v.1.0.0</div>
+
+<!-- Game Over / Replay Modal -->
+<div id="modal" class="modal hidden">
+  <div class="modalbox">
+    <div class="modal-stars">⭐ ⭐ ⭐</div>
+    <h2 id="modalTitle"></h2>
+    <div id="modalText" class="modal-desc"></div>
+    <div class="modal-actions">
+      <button class="btn primary game-btn-large" id="modalYes">↻ 再次挑戰</button>
+      <button class="btn secondary game-btn-large" id="modalNo">🏠 返回大廳</button>
+    </div>
+  </div>
+</div>
+
+<!-- 玩家個人檔案與頭像框選擇彈窗 Modal -->
+<div id="profileModal" class="modal hidden">
+  <div class="modalbox" style="width: min(92vw, 480px); text-align: left; max-height: 85vh; overflow-y: auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <h2 style="margin: 0; font-size: 20px;" id="profileTitle">👤 玩家造型與裝備設定</h2>
+      <button class="btn secondary" style="padding: 4px 12px; border-radius: 12px;" onclick="closeProfileModal()">✕</button>
+    </div>
+
+    <!-- Current Profile Header Card -->
+    <div style="display: flex; align-items: center; gap: 16px; background: rgba(255,255,255,0.05); padding: 14px; border-radius: 20px; border: 1px solid var(--glass-border);">
+      <div class="user-avatar-box frame-gold" id="modalPreviewAvatarBox" style="width: 54px; height: 54px;">
+        <span class="user-avatar-icon" id="modalPreviewAvatarIcon" style="font-size: 30px;">👤</span>
+      </div>
+      <div style="flex: 1;">
+        <div style="display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+          <!-- 可更改玩家名稱之輸入框 -->
+          <div style="display: flex; align-items: center; gap: 6px;">
+            <input type="text" id="profileNameInput" placeholder="請輸入玩家名稱" maxlength="12" style="font-weight: 900; font-size: 15px; color: var(--ink-bright); background: rgba(255, 255, 255, 0.12); border: 1px solid var(--glass-border); border-radius: 8px; padding: 4px 8px; width: 140px; outline: none;" />
+            <span style="font-size: 12px; opacity: 0.7;" title="點擊即可修改名稱">✏️</span>
+          </div>
+          <span style="font-size: 12px; font-weight: 800; color: var(--accent);" id="profileLevelTag">LV.1</span>
+        </div>
+        <div style="margin-top: 8px;">
+          <div style="display: flex; justify-content: space-between; font-size: 11px; color: var(--muted); margin-bottom: 3px;">
+            <span>經驗值 EXP</span>
+            <span id="profileExpText">0 / 150</span>
+          </div>
+          <div class="loading-bar-bg" style="height: 8px;">
+            <div class="loading-bar" id="profileExpBar" style="width: 0%;"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Stats summary cards -->
+    <div class="stat-card-group">
+      <div class="stat-card">
+        <div class="lbl">🥇 金牌榮譽</div>
+        <div class="val" id="profileMedalVal">0</div>
+      </div>
+      <div class="stat-card">
+        <div class="lbl">🪙 玩家金幣</div>
+        <div class="val" id="profileCoinVal">100</div>
+      </div>
+      <div class="stat-card">
+        <div class="lbl">🏆 累積總勝場</div>
+        <div class="val" id="profileWinVal">0</div>
+      </div>
+    </div>
+
+    <!-- Avatar Selection -->
+    <h3 style="font-size: 15px; margin: 16px 0 8px; color: var(--ink-bright);" id="labelSelectAvatar">選擇玩家頭像</h3>
+    <div class="avatar-grid" id="avatarPickerGrid"></div>
+
+    <!-- Frame Selection -->
+    <h3 style="font-size: 15px; margin: 16px 0 8px; color: var(--ink-bright);" id="labelSelectFrame">選擇頭像框造型</h3>
+    <div class="frame-grid" id="framePickerGrid"></div>
+
+    <div style="margin-top: 20px;">
+      <button class="btn primary game-btn-large" onclick="closeProfileModal()">完成設定</button>
+    </div>
+  </div>
+</div>
+
+<!-- 榮譽榜彈窗 Modal -->
+<div id="rankModal" class="modal hidden">
+  <div class="modalbox" style="width: min(94vw, 540px); text-align: left; max-height: 88vh; overflow-y: auto;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+      <h2 style="margin: 0; font-size: 22px;" id="rankModalTitle">🏆 遊戲王國榮譽榜</h2>
+      <button class="btn secondary" style="padding: 4px 12px; border-radius: 12px;" onclick="closeRankModal()">✕</button>
+    </div>
+
+    <p style="font-size: 13px; color: var(--muted); margin: 0 0 14px; line-height: 1.4;" id="rankModalDesc">
+      榮譽榜根據玩家獲得的 🥇 金牌總數 與 🏆 總勝場數 進行即時排名。持續對局贏得高難度 AI 解鎖更多專屬成就！
+    </p>
+
+    <!-- My Rank Summary Header -->
+    <div style="background: rgba(56, 189, 248, 0.12); border: 1px solid var(--accent); padding: 12px 16px; border-radius: 18px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
+      <div style="display: flex; align-items: center; gap: 10px;">
+        <div class="user-avatar-box frame-gold" id="rankUserAvatarBox" style="width: 40px; height: 40px;">
+          <span class="user-avatar-icon" id="rankUserAvatarIcon">👤</span>
+        </div>
+        <div>
+          <div style="font-weight: 800; font-size: 14px; color: var(--ink-bright);" id="rankUserName">我的個人排名</div>
+          <div style="font-size: 12px; color: var(--muted);" id="rankUserDetail">LV.1 | 🥇 0 金牌</div>
+        </div>
+      </div>
+      <div style="text-align: right;">
+        <span style="font-size: 12px; color: var(--muted);">目前排名</span>
+        <div style="font-size: 20px; font-weight: 900; color: var(--accent);" id="rankUserPosition">第 - 名</div>
+      </div>
+    </div>
+
+    <!-- Leaderboard Table -->
+    <div style="overflow-x: auto;">
+      <table class="rank-table">
+        <thead>
+          <tr>
+            <th style="width: 14%;">名次</th>
+            <th style="width: 36%; text-align: left;">玩家</th>
+            <th style="width: 18%;">等級</th>
+            <th style="width: 18%;">金牌</th>
+            <th style="width: 14%;">勝場</th>
+          </tr>
+        </thead>
+        <tbody id="rankTableBody"></tbody>
+      </table>
+    </div>
+
+    <div style="margin-top: 18px;">
+      <button class="btn secondary game-btn-large" onclick="closeRankModal()">返回大廳</button>
+    </div>
+  </div>
+</div>
+
+<!-- Loading Overlay -->
+<div id="loadingOverlay" class="loading-overlay hidden">
+  <div class="loading-box">
+    <div class="loading-crown">♛</div>
+    <div class="loading-title" id="loadingTitle">載入遊戲王國...</div>
+    <div class="loading-tip" id="loadingTip">提示：保持冷靜，規劃後續步驟！</div>
+    <div class="loading-bar-bg"><div class="loading-bar" id="loadingBar"></div></div>
+  </div>
+</div>
+
+<script>
+const $ = id => document.getElementById(id);
+
+const L = {
+  "zh-TW": {
+    splashSub: "全能對局與休閒遊戲天地", splashBtn: "進入遊戲王國",
+    brand: "遊戲王國", tag: "一個地方，玩遍你喜歡的遊戲", hero: "歡迎來到遊戲王國", heroT: "選擇你喜愛的遊戲，擊敗 AI 或與好友同樂！",
+    home: "遊戲大廳", new: "開始遊玩", mode: "模式", ai: "AI 對局", pvp: "雙人對局", random: "隨機對局", rank: "榮譽榜",
+    rules: "玩法說明", difficulty: "難度", easy: "簡單", normal: "普通", hard: "困難",
+    yes: "↻ 再次挑戰", no: "🏠 返回大廳", close: "關閉", question: "恭喜完成對局！要不要再挑戰一局？", win: "獲勝！", draw: "平局！",
+    blackTurn: "⚫ 黑棋回合", whiteTurn: "⚪ 白棋回合", xTurn: "❌ X 玩家回合", oTurn: "⭕ O 玩家回合",
+    redTurn: "🔴 紅棋回合", yellowTurn: "🟡 黃棋回合", findPairs: "找出配對卡牌", score: "得分", moves: "步數",
+    battleStatus: "點擊方格搜尋敵艦", sudokuStatus: "填滿數獨九宮格", checkAns: "檢查答案", wrongAns: "答案有誤，再試一次！",
+    loading: "載入遊戲中...",
+    cats: ["🔥 熱門精選", "🧠 智力與棋牌", "⚡ 街機與反應"],
+    tips: ["提示：AI 在困難難度下非常強大，做好準備！", "提示：保持冷靜，規劃後續 3 步走法。", "提示：挑戰高難度模式可獲得豐富金牌與獎勵！"],
+    g: {
+      gomoku: ["⚫⚪", "五子棋", "率先在橫、豎或斜方向連成 5 子的一方獲勝。", "【操作】點擊棋盤交叉點落子。\n【目標】率先連成五子。"],
+      ttt: ["⭕❌", "井字棋", "3x3 棋盤，率先連成 3 子的一方獲勝。", "【操作】點擊空格落子。\n【目標】率先將三個標記連成一線。"],
+      connect: ["🔴🟡", "四子棋", "重力下落棋盤，率先將 4 個棋子連成一線獲勝。", "【操作】點擊任一列頂部放入棋子。\n【目標】率先連成四子。"],
+      memory: ["🃏", "記憶翻牌", "翻開兩張相同圖案的卡牌進行消除。", "【操作】點擊卡牌翻開。\n【目標】憑記憶找出所有配對卡牌。"],
+      snake: ["🐍", "貪食蛇", "控制蛇吃食物變長，避免撞牆或撞到自己。", "【操作】使用方向鍵或畫面按鈕控制方向。\n【目標】吃掉最多食物獲得高分。"],
+      puzzle: ["🧩", "數字拼圖", "移動方塊將數字 1-8 按順序排列。", "【操作】點擊空格旁的數字方塊進行移動。\n【目標】還原數字 1 到 8 的順序。"],
+      pong: ["🏓", "乒乓球", "移動拍子擊球，率先達到 5 分獲勝。", "【操作】滑鼠移動或觸控拖曳控制拍子。\n【目標】反擊乒乓球並擊敗 AI。"],
+      battle: ["🚢", "海戰棋", "猜測並擊沉對手藏匿的所有戰艦。", "【操作】點擊敵方棋盤進行發射。\n【目標】擊沉敵方全部戰艦。"],
+      chess: ["♟️", "西洋棋", "經典國際象棋對局，吃掉對方的王獲得勝利。", "【操作】點擊棋子選擇，再點擊目標位置移動。\n【目標】將死對手的王。"],
+      reversi: ["🃏", "黑白棋", "夾住對手棋子將其翻轉，棋子多者獲勝。", "【操作】點擊能夾住敵方棋子的空格落子。\n【目標】佔有最多棋子。"],
+      sudoku: ["🔢", "數獨", "在 9x9 格子中填入 1-9，使數字不重複。", "【操作】點擊空格切換數字。\n【目標】正確填滿所有格子。"],
+      g2048: ["🎲", "2048", "滑動方塊合併相同數字，挑戰拼出 2048！", "【操作】方向鍵或手勢滑動方塊。\n【目標】合併出 2048 方塊。"],
+      mines: ["💣", "踩地雷", "找出所有安全的格子，避開所有地雷。", "【操作】點擊格子翻開，切換模式可以插旗標記。\n【目標】避開地雷翻開所有安全區。"],
+      breakout: ["🧱", "打磚塊", "移動拍子反彈彈珠，消除畫面上所有磚塊。", "【操作】滑動拍子控制反彈角度。\n【目標】消滅所有磚塊。"],
+      flappy: ["🐤", "飛翔小鳥", "點擊螢幕讓小鳥飛躍障礙水管。", "【操作】點擊畫面飛行。\n【目標】穿越最多水管。"],
+      mole: ["🔨", "打地鼠", "限時 30 秒內快速擊中冒出的地鼠！", "【操作】快速點擊冒出地鼠的洞口。\n【目標】獲取最高分數。"]
+    }
+  },
+  "zh-CN": {
+    splashSub: "全能对局与休闲游戏天地", splashBtn: "进入游戏王国",
+    brand: "游戏王国", tag: "一个地方，玩遍你喜欢的游戏", hero: "欢迎来到游戏王国", heroT: "选择你喜爱的游戏，击败 AI 或与好友同乐！",
+    home: "游戏大厅", new: "开始游戏", mode: "模式", ai: "AI 对局", pvp: "双人对局", random: "随机对局", rank: "荣誉榜",
+    rules: "玩法说明", difficulty: "难度", easy: "简单", normal: "普通", hard: "困难",
+    yes: "↻ 再次挑战", no: "🏠 返回大厅", close: "关闭", question: "恭喜完成对局！要不要再挑战一局？", win: "获胜！", draw: "平局！",
+    blackTurn: "⚫ 黑棋回合", whiteTurn: "⚪ 白棋回合", xTurn: "❌ X 玩家回合", oTurn: "⭕ O 玩家回合",
+    redTurn: "🔴 红棋回合", yellowTurn: "🟡 黄棋回合", findPairs: "找出配对卡牌", score: "得分", moves: "步数",
+    battleStatus: "点击方格搜寻敌舰", sudokuStatus: "填满数独九宫格", checkAns: "检查答案", wrongAns: "答案有误，再试一次！",
+    loading: "加载游戏中...",
+    cats: ["🔥 热门精选", "🧠 智力与棋牌", "⚡ 街机与反应"],
+    tips: ["提示：AI 在困难难度下非常强大，做好准备！", "提示：保持冷静，规划后续步骤。"],
+    g: {
+      gomoku: ["⚫⚪", "五子棋", "率先在横、竖或斜方向连成 5 子的一方获胜。", "【操作】点击棋盘交叉点落子。"],
+      ttt: ["⭕❌", "井字棋", "3x3 棋盘，率先连成 3 子的一方获胜。", "【操作】点击空格落子。"],
+      connect: ["🔴🟡", "四子棋", "重力下落棋盘，率先将 4 个棋子连成一线获胜。", "【操作】点击列顶部放入棋子。"],
+      memory: ["🃏", "记忆翻牌", "翻开两张相同图案的卡牌进行消除。", "【操作】点击卡牌翻开。"],
+      snake: ["🐍", "贪食蛇", "控制蛇吃食物变长，避免撞墙或撞到自己。", "【操作】使用方向键或方向按钮。"],
+      puzzle: ["🧩", "数字拼图", "移动方块将数字 1-8 按顺序排列。", "【操作】点击空格旁边的数字方块。"],
+      pong: ["🏓", "乒乓球", "移动拍子击球，率先达到 5 分获胜。", "【操作】滑动控制拍子。"],
+      battle: ["🚢", "海战棋", "猜测并击沉对手藏匿的所有战舰。", "【操作】点击敌方棋盘发炮。"],
+      chess: ["♟️", "西洋棋", "经典国际象棋对局，吃掉对方的王获得胜利。", "【操作】点击棋子再点击目标位置。"],
+      reversi: ["🃏", "黑白棋", "夹住对手棋子将其翻转，棋子多者获胜。", "【操作】点击可夹住敌方棋子的空格。"],
+      sudoku: ["🔢", "数独", "在 9x9 格子中填入 1-9，使数字不重复。", "【操作】点击空格切换数字。"],
+      g2048: ["🎲", "2048", "滑动方块合并相同数字，挑战拼出 2048！", "【操作】方向键或滑动方块。"],
+      mines: ["💣", "扫雷", "找出所有安全格子，避开所有地雷。", "【操作】点击翻开，插旗标记。"],
+      breakout: ["🧱", "打砖块", "移动拍子反弹弹珠，消除所有砖块。", "【操作】滑动拍子。"],
+      flappy: ["🐤", "飞翔小鸟", "点击屏幕让小鸟飞跃障碍水管。", "【操作】点击屏幕飞行。"],
+      mole: ["🔨", "打地鼠", "限时 30 秒内快速击中冒出的地鼠！", "【操作】点击冒出地鼠的洞口。"]
+    }
+  },
+  "en": {
+    splashSub: "Classic Gaming & Arcade Kingdom", splashBtn: "Enter Kingdom",
+    brand: "Game Kingdom", tag: "One place for all your favorite games", hero: "Welcome to Game Kingdom", heroT: "Select your favorite game, defeat AI or play with friends!",
+    home: "Lobby", new: "PLAY NOW", mode: "Mode", ai: "vs AI", pvp: "2 Players", random: "Random", rank: "Honor",
+    rules: "Rules", difficulty: "Difficulty", easy: "Easy", normal: "Normal", hard: "Hard",
+    yes: "↻ Retry", no: "🏠 Lobby", close: "Close", question: "Game finished! Play another match?", win: " Wins!", draw: "Draw!",
+    blackTurn: "⚫ Black's Turn", whiteTurn: "⚪ White's Turn", xTurn: "❌ Player X's Turn", oTurn: "⭕ Player O's Turn",
+    redTurn: "🔴 Red's Turn", yellowTurn: "🟡 Yellow's Turn", findPairs: "Match card pairs", score: "Score", moves: "Moves",
+    battleStatus: "Tap grid to locate enemy ships", sudokuStatus: "Fill grid with digits 1-9", checkAns: "Check Solution", wrongAns: "Incorrect solution, try again!",
+    loading: "Loading Game...",
+    cats: ["🔥 Hot Picks", "🧠 Mind & Board", "⚡ Arcade & Action"],
+    tips: ["Tip: Hard AI mode plans ahead!", "Tip: Keep calm and plan your moves."],
+    g: {
+      gomoku: ["⚫⚪", "Gomoku", "Get five stones in a row to win.", "Connect 5 stones in a row."],
+      ttt: ["⭕❌", "Tic-Tac-Toe", "Get three marks in a row to win.", "Connect 3 in a row."],
+      connect: ["🔴🟡", "Connect Four", "Drop discs to connect four in a row.", "Connect 4 discs."],
+      memory: ["🃏", "Memory Match", "Find pairs of matching cards.", "Match all card pairs."],
+      snake: ["🐍", "Snake", "Eat food and grow without crashing.", "Get highest score."],
+      puzzle: ["🧩", "Slide Puzzle", "Arrange numbers 1-8 in order.", "Order tiles 1 to 8."],
+      pong: ["🏓", "Pong", "Bounce ball back and score 5 points.", "Beat AI paddle."],
+      battle: ["🚢", "Battleship", "Find and sink all enemy ships.", "Sink all enemy ships."],
+      chess: ["♟️", "Chess", "Classic chess match. Checkmate king.", "Checkmate enemy king."],
+      reversi: ["🃏", "Reversi", "Flip enemy discs and control board.", "Occupies most discs."],
+      sudoku: ["🔢", "Sudoku", "Fill 9x9 grid with numbers 1-9.", "Fill all numbers correctly."],
+      g2048: ["🎲", "2048", "Slide tiles to merge and reach 2048!", "Swipe tiles to reach 2048."],
+      mines: ["💣", "Minesweeper", "Uncover safe cells and avoid mines.", "Avoid all hidden mines."],
+      breakout: ["🧱", "Breakout", "Bounce ball to break all bricks.", "Break all bricks."],
+      flappy: ["🐤", "Flappy Bird", "Tap screen to fly through pipes.", "Fly through pipes."],
+      mole: ["🔨", "Whack-a-Mole", "Whack moles as fast as you can in 30s!", "Tap emerging moles."]
+    }
+  },
+  "ja": {
+    splashSub: "至高のゲーム＆対局王国", splashBtn: "王国に入る",
+    brand: "ゲーム王国", tag: "お気に入りのゲームがここにある", hero: "ゲーム王国へようこそ", heroT: "お気に入りのゲームを選んで、AIや友達と対戦しよう！",
+    home: "ロビー", new: "プレイ開始", mode: "モード", ai: "AI対戦", pvp: "2人対戦", random: "ランダム", rank: "殿堂",
+    rules: "ルール説明", difficulty: "難易度", easy: "簡単", normal: "普通", hard: "難しい",
+    yes: "↻ 再挑戦", no: "🏠 ロビーへ", close: "閉じる", question: "クリアおめでとう！もう一局遊ぶ？", win: "の勝利！", draw: "引き分け！",
+    blackTurn: "⚫ 黒の番", whiteTurn: "⚪ 白の番", xTurn: "❌ Player Xの番", oTurn: "⭕ Player Oの番",
+    redTurn: "🔴 赤の番", yellowTurn: "🟡 黄の番", findPairs: "ペアを見つけよう", score: "スコア", moves: "手數",
+    battleStatus: "マスをタップして敵艦を探索", sudokuStatus: "數獨を完成させよう", checkAns: "答え合わせ", wrongAns: "間違いがあります。もう一度！",
+    loading: "ロード中...",
+    cats: ["🔥 ピックアップ", "🧠 思考・ボード", "⚡ アクション・パズル"],
+    tips: ["ヒント: 難易度ハードのAIは強力です！"],
+    g: {
+      gomoku: ["⚫⚪", "五目並べ", "縦・橫・斜めに5つ連ねたら勝利。", "【操作】盤面をタップして打つ。"],
+      ttt: ["⭕❌", "三目並べ", "3x3の盤面で3つ並べた方の勝利。", "【操作】空きマスをタップ。"],
+      connect: ["🔴🟡", "コネクトフォー", "重力で落ちる駒を4つ並べたら勝利。", "【操作】列の上のボタンをタップ。"],
+      memory: ["🃏", "神経衰弱", "同じ絵柄のカードを揃えて消去。", "【操作】カードをタップ。"],
+      snake: ["🐍", "スネークゲーム", "餌を食べて蛇を伸ばそう。", "【操作】方向キーや按鈕。"],
+      puzzle: ["🧩", "スライドパズル", "數字の1〜8を順番に並べ替える。", "【操作】空白の橫の數字をタップ。"],
+      pong: ["🏓", "ピンポン", "パドルを動かして球を打ち返そう。", "【操作】スワイプで操作。"],
+      battle: ["🚢", "海戦ゲーム", "敵の戦艦の位置を予測して沈めよう。", "【操作】敵の盤面をタップ。"],
+      chess: ["♟️", "チェス", "相手のキングをチェックメイトしよう。", "【操作】駒を選択して移動。"],
+      reversi: ["🃏", "オセロ", "相手の石を挟んで裏返そう。", "【操作】挟めるマスをタップ。"],
+      sudoku: ["🔢", "數獨", "9x9の盤面に1〜9を被りなく配置。", "【操作】マスをタップして數字變更。"],
+      g2048: ["🎲", "2048", "タイルを合体させて2048を目指そう！", "【操作】スワイプ操作。"],
+      mines: ["💣", "マインスイーパー", "地雷を避けて全マスを開けよう。", "【操作】タップで開く、旗モード切り替え。"],
+      breakout: ["🧱", "ブロック崩し", "ボールを反射させて全ブロックを破壊。", "【操作】パドルをスワイプ。"],
+      flappy: ["🐤", "フラッピーバード", "タップして鳥を羽ばたかせ障害物を避ける。", "【操作】畫面タップでジャンプ。"],
+      mole: ["🔨", "モグラ叩き", "30秒之內にモグラを素早く叩こう！", "【操作】出てきたモグラをタップ。"]
+    }
+  },
+  "ko": {
+    splashSub: "최고의 게임 및 대전 왕국", splashBtn: "게임 왕국 입장",
+    brand: "게임 왕국", tag: "좋아하는 모든 게임을 한곳에서", hero: "게임 왕국에 오신 것을 환영합니다", heroT: "좋아하는 게임을 선택하고 AI 또는 친구와 대결하세요!",
+    home: "로비", new: "게임 시작", mode: "모드", ai: "AI 대전", pvp: "2인 대전", random: "랜덤 게임", rank: "랭킹",
+    rules: "게임 규칙", difficulty: "난이도", easy: "쉬움", normal: "보통", hard: "어려움",
+    yes: "↻ 다시 도전", no: "🏠 로비로", close: "닫기", question: "축하합니다! 다시 한 판 하시겠습니까?", win: " 승리!", draw: "무승부!",
+    blackTurn: "⚫ 흑돌 차례", whiteTurn: "⚪ 백돌 차례", xTurn: "❌ X 플레이어 차례", oTurn: "⭕ O 플레이어 차례",
+    redTurn: "🔴 레드 차례", yellowTurn: "🟡 옐로우 차례", findPairs: "짝을 맞춰보세요", score: "점수", moves: "이동 횟수",
+    battleStatus: "격자를 터치하여 적함을 탐색하세요", sudokuStatus: "스도쿠 판을 채우세요", checkAns: "정답 확인", wrongAns: "오답이 있습니다. 다시 시도해보세요!",
+    loading: "로딩 중...",
+    cats: ["🔥 인기 추천", "🧠 보드 & 두뇌", "⚡ 아케이드 & 액션"],
+    tips: ["힌트: 어려운 난이도의 AI는 신중하게 대처하세요!"],
+    g: {
+      gomoku: ["⚫⚪", "오목", "가로, 세로, 대각선으로 5개를 먼저 놓으면 승리.", "【조작】바둑판 교차점을 터치."],
+      ttt: ["⭕❌", "틱택토", "3x3 판에서 3개를 먼저 이어놓으면 승리.", "【조작】빈칸을 터치."],
+      connect: ["🔴🟡", "커넥트 포", "4개의 디스크를 먼저 연결하면 승리.", "【조작】열 위쪽을 터치."],
+      memory: ["🃏", "카드 맞추기", "같은 그림의 카드를 찾아서 맞추세요.", "【조작】카드를 터치."],
+      snake: ["🐍", "스네이크", "먹이를 먹고 뱀을 키우세요.", "【조작】방향키 또는 버튼."],
+      puzzle: ["🧩", "슬라이드 퍼즐", "1부터 8까지의 숫자를 순서대로 정렬하세요.", "【조작】숫자 조각을 터치."],
+      pong: ["🏓", "탁구", "패들을 움직여 공을 받아치세요.", "【조작】스와이프로 이동."],
+      battle: ["🚢", "해전 게임", "적의 숨겨진 함선을 탐색하여 침몰시키세요.", "【조작】적 보드를 터치."],
+      chess: ["♟️", "체스", "상대방의 킹을 체크메이트하세요.", "【조작】기물을 선택 후 이동."],
+      reversi: ["🃏", "오셀로", "상대방의 돌을 뒤집어 더 많은 돌을 차지하세요.", "【조작】빈칸을 터치."],
+      sudoku: ["🔢", "스도쿠", "9x9 격자에 1-9 숫자를 중복 없이 채우세요.", "【조작】칸을 터치하여 숫자 변경."],
+      g2048: ["🎲", "2048", "타일을 합쳐 2048을 만드세요!", "【조작】스와이프로 이동."],
+      mines: ["💣", "지뢰찾기", "지뢰를 피해 모든 칸을 여세요.", "【조작】터치하여 열기, 깃발 모드 전환."],
+      breakout: ["🧱", "벽돌깨기", "공을 튕겨 모든 벽돌을 깨뜨리세요.", "【조작】패들을 스와이프."],
+      flappy: ["🐤", "플래피 버드", "화면을 터치하여 파이프 장애물을 피하세요.", "【조작】화면 터치로 점프."],
+      mole: ["🔨", "두더지 잡기", "30초 동안 올라오는 두더지를 빠르게 잡으세요!", "【조작】두더지가 나온 구멍 터치."]
+    }
+  }
+};
+
+/* 移除 HOT, NEW, SOLO 標籤 */
+const categories = [
+  { nameIdx: 0, games: ["flappy", "g2048", "gomoku", "mines", "snake", "memory"] },
+  { nameIdx: 1, games: ["chess", "reversi", "sudoku", "connect", "battle", "ttt", "puzzle"] },
+  { nameIdx: 2, games: ["breakout", "mole", "pong", "snake", "flappy"] }
+];
+
+/* 玩家個人數據儲存與算式機制 */
+let playerStats = {
+  name: "號令天下玩家",
+  avatar: "👤",
+  frame: "frame-gold",
+  exp: 0,
+  level: 1,
+  goldMedals: 0,
+  coins: 100,
+  wins: 0,
+  gameWins: {}
+};
+
+const AVATARS = ["👤", "👑", "⚔️", "🧙‍♂️", "🦊", "🐉", "🤖", "🎮", "🐱", "🦁", "🐯", "👾"];
+
+const FRAMES = [
+  { id: "frame-none", name: "無邊框", minLevel: 1, minMedals: 0 },
+  { id: "frame-wood", name: "新手木框", minLevel: 1, minMedals: 0 },
+  { id: "frame-silver", name: "耀銀光框", minLevel: 2, minMedals: 3 },
+  { id: "frame-gold", name: "璀璨金框", minLevel: 3, minMedals: 5 },
+  { id: "frame-diamond", name: "幻彩鑽石框", minLevel: 5, minMedals: 10 },
+  { id: "frame-dragon", name: "龍王神級框", minLevel: 8, minMedals: 20 }
+];
+
+const BASE_LEADERBOARD = [
+  { name: "👑 棋聖·雲頂天", avatar: "👑", frame: "frame-dragon", level: 50, goldMedals: 120, wins: 280, isUser: false },
+  { name: "⚔️ 絕代劍狂", avatar: "⚔️", frame: "frame-diamond", level: 42, goldMedals: 95, wins: 210, isUser: false },
+  { name: "🎯 策略巨擘", avatar: "🤖", frame: "frame-gold", level: 35, goldMedals: 70, wins: 160, isUser: false },
+  { name: "🧙 智慧先導", avatar: "🧙‍♂️", frame: "frame-gold", level: 28, goldMedals: 50, wins: 115, isUser: false },
+  { name: "🦊 靈狐弈手", avatar: "🦊", frame: "frame-silver", level: 20, goldMedals: 32, wins: 75, isUser: false },
+  { name: "🐉 破空神龍", avatar: "🐉", frame: "frame-silver", level: 15, goldMedals: 22, wins: 50, isUser: false },
+  { name: "🎮 街機達人", avatar: "🎮", frame: "frame-wood", level: 10, goldMedals: 12, wins: 30, isUser: false },
+  { name: "🐱 幸運黑貓", avatar: "🐱", frame: "frame-wood", level: 6, goldMedals: 6, wins: 15, isUser: false }
+];
+
+let lang = "zh-TW", game = "gomoku", state = {}, timer = null, animFrame = null, currentTheme = "dark";
+
+function t() { return L[lang] || L["zh-TW"]; }
+
+/* 本地資料持久化機制 */
+function loadPlayerStats() {
+  try {
+    const saved = localStorage.getItem("gk_player_stats");
+    if (saved) playerStats = { ...playerStats, ...JSON.parse(saved) };
+  } catch(e){}
+  updateHud();
+}
+
+function savePlayerStats() {
+  try {
+    localStorage.setItem("gk_player_stats", JSON.stringify(playerStats));
+  } catch(e){}
+  updateHud();
+}
+
+function updateHud() {
+  $("hudAvatarBox").className = `user-avatar-box ${playerStats.frame}`;
+  $("hudAvatarIcon").textContent = playerStats.avatar;
+  if ($("hudPlayerName")) $("hudPlayerName").textContent = playerStats.name || "號令天下玩家";
+  $("hudLevelText").textContent = `LV.${playerStats.level}`;
+  $("hudMedalText").textContent = `🥇 ${playerStats.goldMedals}`;
+  $("hudCoinText").textContent = playerStats.coins.toLocaleString();
+}
+
+/* 戰報獎勵計算與等級機制 */
+function awardWinRewards(isWin) {
+  if (!isWin) return null;
+  
+  let diff = $("difficulty") ? $("difficulty").value : "normal";
+  let mode = $("mode") ? $("mode").value : "pvp";
+  
+  let expEarned = 100;
+  let medalsEarned = 1;
+  let coinsEarned = 50;
+  
+  if (mode === "ai") {
+    if (diff === "hard") { expEarned = 300; medalsEarned = 3; coinsEarned = 200; }
+    else if (diff === "normal") { expEarned = 180; medalsEarned = 2; coinsEarned = 100; }
+    else { expEarned = 100; medalsEarned = 1; coinsEarned = 50; }
+  } else {
+    expEarned = 120; medalsEarned = 1; coinsEarned = 80;
+  }
+  
+  playerStats.exp += expEarned;
+  playerStats.goldMedals += medalsEarned;
+  playerStats.coins += coinsEarned;
+  playerStats.wins += 1;
+  if (!playerStats.gameWins[game]) playerStats.gameWins[game] = 0;
+  playerStats.gameWins[game] += 1;
+  
+  let oldLevel = playerStats.level;
+  while (playerStats.exp >= playerStats.level * 150) {
+    playerStats.level += 1;
+  }
+  let leveledUp = playerStats.level > oldLevel;
+  
+  savePlayerStats();
+  
+  return {
+    exp: expEarned,
+    medals: medalsEarned,
+    coins: coinsEarned,
+    leveledUp: leveledUp,
+    newLevel: playerStats.level
+  };
+}
+
+/* 玩家個人檔案 Modal 渲染 */
+function openProfileModal() {
+  renderProfileModal();
+  $("profileModal").classList.remove("hidden");
+}
+
+function closeProfileModal() {
+  $("profileModal").classList.add("hidden");
+}
+
+function renderProfileModal() {
+  $("modalPreviewAvatarBox").className = `user-avatar-box ${playerStats.frame}`;
+  $("modalPreviewAvatarIcon").textContent = playerStats.avatar;
+  
+  // 設置玩家名稱輸入框與監聽事件
+  const nameInput = $("profileNameInput");
+  if (nameInput) {
+    nameInput.value = playerStats.name || "號令天下玩家";
+    nameInput.oninput = (e) => {
+      playerStats.name = e.target.value.trim() || "號令天下玩家";
+      savePlayerStats();
+    };
+  }
+
+  $("profileLevelTag").textContent = `LV.${playerStats.level}`;
+  
+  let reqExp = playerStats.level * 150;
+  $("profileExpText").textContent = `${playerStats.exp} / ${reqExp} EXP`;
+  let expPercent = Math.min(100, Math.floor((playerStats.exp / reqExp) * 100));
+  $("profileExpBar").style.width = `${expPercent}%`;
+  
+  $("profileMedalVal").textContent = playerStats.goldMedals;
+  $("profileCoinVal").textContent = playerStats.coins.toLocaleString();
+  $("profileWinVal").textContent = playerStats.wins;
+  
+  // 渲染頭像選擇器
+  let avatarGrid = $("avatarPickerGrid");
+  avatarGrid.innerHTML = "";
+  AVATARS.forEach(av => {
+    let div = document.createElement("div");
+    div.className = `avatar-item ${playerStats.avatar === av ? 'active' : ''}`;
+    div.textContent = av;
+    div.onclick = () => {
+      playerStats.avatar = av;
+      savePlayerStats();
+      renderProfileModal();
+    };
+    avatarGrid.appendChild(div);
+  });
+  
+  // 渲染頭像框選擇器
+  let frameGrid = $("framePickerGrid");
+  frameGrid.innerHTML = "";
+  FRAMES.forEach(fr => {
+    let isUnlocked = playerStats.level >= fr.minLevel || playerStats.goldMedals >= fr.minMedals;
+    let isEquipped = playerStats.frame === fr.id;
+    
+    let div = document.createElement("div");
+    div.className = `frame-item ${isEquipped ? 'active' : ''} ${!isUnlocked ? 'locked' : ''}`;
+    
+    let lockLabel = !isUnlocked 
+      ? `<div style="font-size: 10px; color: var(--muted);">LV.${fr.minLevel} / 🥇${fr.minMedals}</div>` 
+      : (isEquipped ? `<div style="font-size: 10px; color: var(--accent);">裝備中</div>` : `<div style="font-size: 10px; color: #10b981;">點擊裝備</div>`);
+    
+    div.innerHTML = `
+      <div class="user-avatar-box ${fr.id}" style="width: 32px; height: 32px;">
+        <span class="user-avatar-icon" style="font-size: 16px;">${playerStats.avatar}</span>
+      </div>
+      <div>${fr.name}</div>
+      ${lockLabel}
+    `;
+    
+    if (isUnlocked) {
+      div.onclick = () => {
+        playerStats.frame = fr.id;
+        savePlayerStats();
+        renderProfileModal();
+      };
+    }
+    frameGrid.appendChild(div);
+  });
+}
+
+/* 榮譽榜 Modal 渲染 */
+function getCombinedLeaderboard() {
+  let userEntry = {
+    name: playerStats.name || "號令天下玩家",
+    avatar: playerStats.avatar,
+    frame: playerStats.frame,
+    level: playerStats.level,
+    goldMedals: playerStats.goldMedals,
+    wins: playerStats.wins,
+    isUser: true
+  };
+  
+  let list = [...BASE_LEADERBOARD, userEntry];
+  list.sort((a, b) => {
+    if (b.goldMedals !== a.goldMedals) return b.goldMedals - a.goldMedals;
+    if (b.wins !== a.wins) return b.wins - a.wins;
+    return b.level - a.level;
+  });
+  return list;
+}
+
+function showHonorModal() {
+  renderRankModal();
+  $("rankModal").classList.remove("hidden");
+  $("btnNavRank").classList.add("active");
+  $("btnNavHome").classList.remove("active");
+  $("btnNavRandom").classList.remove("active");
+}
+
+function closeRankModal() {
+  $("rankModal").classList.add("hidden");
+  $("btnNavRank").classList.remove("active");
+  if ($("gamePanel").classList.contains("hidden")) {
+    $("btnNavHome").classList.add("active");
+  }
+}
+
+function renderRankModal() {
+  let list = getCombinedLeaderboard();
+  let tbody = $("rankTableBody");
+  tbody.innerHTML = "";
+  
+  let userRank = 0;
+  
+  list.forEach((item, index) => {
+    let rankNum = index + 1;
+    if (item.isUser) userRank = rankNum;
+    
+    let tr = document.createElement("tr");
+    if (item.isUser) tr.className = "rank-row-user";
+    
+    let badgeClass = rankNum === 1 ? "rank-badge-1" : rankNum === 2 ? "rank-badge-2" : rankNum === 3 ? "rank-badge-3" : "";
+    let rankText = rankNum === 1 ? "🥇 1" : rankNum === 2 ? "🥈 2" : rankNum === 3 ? "🥉 3" : `${rankNum}`;
+    
+    tr.innerHTML = `
+      <td class="${badgeClass}">${rankText}</td>
+      <td style="text-align: left;">
+        <div style="display: flex; align-items: center; gap: 8px;">
+          <div class="user-avatar-box ${item.frame}" style="width: 28px; height: 28px;">
+            <span class="user-avatar-icon" style="font-size: 14px;">${item.avatar}</span>
+          </div>
+          <span>${item.name}${item.isUser ? " (你)" : ""}</span>
+        </div>
+      </td>
+      <td>LV.${item.level}</td>
+      <td style="color: #fbbf24; font-weight: 800;">🥇 ${item.goldMedals}</td>
+      <td>${item.wins}</td>
+    `;
+    tbody.appendChild(tr);
+  });
+  
+  $("rankUserAvatarBox").className = `user-avatar-box ${playerStats.frame}`;
+  $("rankUserAvatarIcon").textContent = playerStats.avatar;
+  $("rankUserName").textContent = playerStats.name || "號令天下玩家";
+  $("rankUserDetail").textContent = `LV.${playerStats.level} | 🥇 ${playerStats.goldMedals} 金牌 | 🏆 ${playerStats.wins} 勝`;
+  $("rankUserPosition").textContent = `第 ${userRank} 名`;
+}
+
+function toggleTheme() {
+  currentTheme = currentTheme === "dark" ? "light" : "dark";
+  document.documentElement.setAttribute("data-theme", currentTheme);
+  updateThemeBtnText();
+}
+
+function updateThemeBtnText() {
+  let btn = $("themeToggle");
+  if (btn) btn.textContent = currentTheme === "dark" ? "淺色模式" : "深色模式";
+}
+
+function stopAllTimers() {
+  if (timer) { clearTimeout(timer); timer = null; }
+  if (state.timer) { clearInterval(state.timer); state.timer = null; }
+  if (animFrame) { cancelAnimationFrame(animFrame); animFrame = null; }
+  document.onkeydown = null;
+}
+
+function setLang(v) {
+  lang = v;
+  renderHome();
+  if (!$("gamePanel").classList.contains("hidden")) {
+    renderGameHead();
+    start(game, false);
+  }
+}
+
+function renderHome() {
+  let x = t();
+  $("brand").textContent = x.brand; $("tagline").textContent = x.tag;
+  $("heroTitle").textContent = x.hero; $("heroText").textContent = x.heroT;
+  $("splashSub").textContent = x.splashSub; $("splashBtnText").textContent = x.splashBtn;
+  $("navHome").textContent = x.home; $("navRandom").textContent = x.random; $("navRank").textContent = x.rank;
+  
+  updateThemeBtnText();
+
+  let html = "";
+  categories.forEach(cat => {
+    html += `
+      <section class="category-section">
+        <div class="section-title">
+          <h2>${x.cats[cat.nameIdx]}</h2>
+        </div>
+        <div class="swipe-container">
+          ${cat.games.map(k => {
+            let item = x.g[k];
+            if (!item) return "";
+            return `
+              <article class="game-card">
+                <div>
+                  <div class="icon">${item[0]}</div>
+                  <h3>${item[1]}</h3>
+                  <p>${item[2]}</p>
+                </div>
+                <button class="play-btn" data-game="${k}">${x.new}</button>
+              </article>
+            `;
+          }).join("")}
+        </div>
+      </section>
+    `;
+  });
+  $("showcaseArea").innerHTML = html;
+  document.querySelectorAll(".play-btn").forEach(b => b.onclick = () => openGame(b.dataset.game));
+}
+
+function openRandomGame() {
+  let allGames = ["gomoku", "ttt", "connect", "memory", "snake", "puzzle", "pong", "battle", "chess", "reversi", "sudoku", "g2048", "mines", "breakout", "flappy", "mole"];
+  let randomGame = allGames[Math.floor(Math.random() * allGames.length)];
+  openGame(randomGame);
+}
+
+function renderGameHead() {
+  let x = t(), gInfo = x.g[game];
+  if (!gInfo) return;
+  $("gameName").textContent = gInfo[1];
+  $("gameDesc").textContent = gInfo[2];
+  $("backText").textContent = x.home;
+  $("restartText").textContent = x.new;
+  $("modeLabel").textContent = x.mode;
+  $("mode").options[0].text = x.ai;
+  $("mode").options[1].text = x.pvp;
+  
+  $("difficultyLabel").textContent = x.difficulty;
+  $("difficulty").options[0].text = x.easy;
+  $("difficulty").options[1].text = x.normal;
+  $("difficulty").options[2].text = x.hard;
+  $("rules").textContent = x.rules;
+}
+
+function triggerLoading(callback, duration = 350) {
+  let overlay = $("loadingOverlay");
+  let bar = $("loadingBar");
+  let title = $("loadingTitle");
+  let tip = $("loadingTip");
+  
+  title.textContent = t().loading;
+  let tipsArr = t().tips || ["Loading..."];
+  tip.textContent = tipsArr[Math.floor(Math.random() * tipsArr.length)];
+  
+  bar.style.width = "0%";
+  overlay.classList.remove("hidden", "fade-out");
+  
+  setTimeout(() => { bar.style.width = "75%"; }, 40);
+  setTimeout(() => { bar.style.width = "100%"; }, duration - 80);
+  
+  setTimeout(() => {
+    overlay.classList.add("fade-out");
+    setTimeout(() => {
+      overlay.classList.add("hidden");
+      if (callback) callback();
+    }, 200);
+  }, duration);
+}
+
+function openGame(g) {
+  game = g;
+  triggerLoading(() => {
+    $("home").classList.add("hidden");
+    $("gamePanel").classList.remove("hidden");
+    $("mode").value = ["gomoku", "ttt", "connect", "memory", "pong", "battle", "chess", "reversi"].includes(g) ? "ai" : "pvp";
+    renderGameHead();
+    start(g, false);
+  }, 350);
+}
+
+function home() {
+  stopAllTimers();
+  closeModal();
+  $("gamePanel").classList.add("hidden");
+  $("home").classList.remove("hidden");
+  $("btnNavHome").classList.add("active");
+  $("btnNavRandom").classList.remove("active");
+  $("btnNavRank").classList.remove("active");
+}
+
+function setStatus(s) { $("status").textContent = s; }
+function closeModal() { $("modal").classList.add("hidden"); }
+
+function showModal(title, text, yesText, noText, yesFn, noFn) {
+  $("modalTitle").textContent = title;
+  $("modalText").textContent = text;
+  $("modalYes").textContent = yesText || t().yes;
+  $("modalNo").textContent = noText || t().no;
+  $("modalNo").classList.toggle("hidden", !noText && noText !== undefined && noText === "");
+  $("modal").classList.remove("hidden");
+  
+  $("modalYes").onclick = () => { closeModal(); if(yesFn) yesFn(); };
+  $("modalNo").onclick = () => { closeModal(); if(noFn) noFn(); else home(); };
+}
+
+function end(msg) {
+  stopAllTimers();
+  state.over = true;
+  setStatus(msg);
+  
+  let isWin = false;
+  if (msg.includes("獲勝") || msg.includes("勝利") || msg.includes("Wins") || msg.includes("승리") || msg.includes("クリア")) {
+    if (!msg.includes("AI 獲勝") && !msg.includes("AI Wins")) isWin = true;
+  }
+  if (!isWin && state.score && state.score > 0) isWin = true;
+  
+  let rewardText = "";
+  if (isWin) {
+    let reward = awardWinRewards(true);
+    if (reward) {
+      rewardText = `\n\n🎉 戰局結算獎勵：\n🥇 金牌 +${reward.medals}  |  🪙 金幣 +${reward.coins}  |  ⚡ 經驗 +${reward.exp}`;
+      if (reward.leveledUp) {
+        rewardText += `\n🎊 恭喜玩家升級至 LV.${reward.newLevel}！`;
+      }
+    }
+  }
+  
+  showModal(msg, t().question + rewardText, t().yes, t().no, () => start(game, false), home);
+}
+
+function start(g, showLoad = true) {
+  if (showLoad) {
+    triggerLoading(() => initGameLogic(g));
+  } else {
+    initGameLogic(g);
+  }
+}
+
+function initGameLogic(g) {
+  stopAllTimers();
+  state = {};
+  closeModal();
+  renderGameHead();
+  $("modeBox").classList.toggle("hidden", ["snake", "puzzle", "pong", "sudoku", "g2048", "mines", "breakout", "flappy", "mole"].includes(g));
+  $("difficulty").classList.toggle("hidden", $("mode").value !== "ai");
+  $("difficultyLabel").classList.toggle("hidden", $("mode").value !== "ai");
+  
+  const inits = {
+    gomoku: initGomoku, ttt: initTTT, connect: initConnect, memory: initMemory,
+    snake: initSnake, puzzle: initPuzzle, pong: initPong, battle: initBattle,
+    chess: initChess, reversi: initReversi, sudoku: initSudoku,
+    g2048: init2048, mines: initMines, breakout: initBreakout, flappy: initFlappy, mole: initMole
+  };
+  if(inits[g]) inits[g]();
+}
+
+function boardWin(b, p, n, rows, cols) {
+  for (let r = 0; r < rows; r++) {
+    for (let c = 0; c < cols; c++) {
+      if (b[r][c] === p) {
+        for (let [dr, dc] of [[1, 0], [0, 1], [1, 1], [1, -1]]) {
+          let ok = true;
+          for (let k = 1; k < n; k++) {
+            let rr = r + dr * k, cc = c + dc * k;
+            if (rr < 0 || rr >= rows || cc < 0 || cc >= cols || b[rr][cc] !== p) { ok = false; break; }
+          }
+          if (ok) return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+/* 1. 五子棋 Gomoku */
+function initGomoku() {
+  state = { b: Array.from({ length: 15 }, () => Array(15).fill(0)), turn: 1, over: false };
+  $("stage").innerHTML = '<div class="board15" id="gboard"></div>';
+  const gb = $("gboard");
+  for (let i = 0; i < 225; i++) {
+    let b = document.createElement("button");
+    b.className = "stone";
+    b.onclick = () => gMove(Math.floor(i / 15), i % 15);
+    gb.appendChild(b);
+  }
+  renderG();
+  setStatus(t().blackTurn);
+}
+function renderG() {
+  [...$("gboard").children].forEach((b, i) => {
+    let v = state.b[Math.floor(i / 15)][i % 15];
+    b.className = "stone " + (v === 1 ? "black" : v === 2 ? "white" : "");
+    b.innerHTML = v ? "<span></span>" : "";
+  });
+}
+function gMove(r, c) {
+  if (state.over || state.b[r][c] || (state.turn === 2 && $("mode").value === "ai")) return;
+  state.b[r][c] = state.turn;
+  renderG();
+  if (boardWin(state.b, state.turn, 5, 15, 15)) return end((state.turn === 1 ? t().blackTurn : t().whiteTurn) + " " + t().win);
+  state.turn = 3 - state.turn;
+  setStatus(state.turn === 1 ? t().blackTurn : t().whiteTurn);
+  if ($("mode").value === "ai" && state.turn === 2) {
+    timer = setTimeout(() => {
+      let empty = [];
+      for(let rr=0; rr<15; rr++) for(let cc=0; cc<15; cc++) if(!state.b[rr][cc]) empty.push([rr,cc]);
+      if(!empty.length) return end(t().draw);
+      let [rr, cc] = empty[Math.floor(Math.random()*empty.length)];
+      state.b[rr][cc] = 2;
+      renderG();
+      if (boardWin(state.b, 2, 5, 15, 15)) return end(t().whiteTurn + " AI 獲勝！");
+      state.turn = 1; setStatus(t().blackTurn);
+    }, 300);
+  }
+}
+
+/* 2. 井字棋 Tic-Tac-Toe */
+function initTTT() {
+  state = { b: Array(9).fill(""), turn: "X", over: false };
+  $("stage").innerHTML = '<div class="ttt" id="ttt"></div>';
+  for (let i = 0; i < 9; i++) {
+    let b = document.createElement("button");
+    b.onclick = () => tttMove(i);
+    $("ttt").appendChild(b);
+  }
+  renderTTT(); setStatus(t().xTurn);
+}
+function renderTTT() { [...$("ttt").children].forEach((b, i) => b.textContent = state.b[i]); }
+function tttMove(i) {
+  if (state.over || state.b[i] || (state.turn === "O" && $("mode").value === "ai")) return;
+  state.b[i] = state.turn; renderTTT();
+  for (let a of [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]]) {
+    if (state.b[a[0]] && state.b[a[0]] === state.b[a[1]] && state.b[a[1]] === state.b[a[2]]) return end(state.b[a[0]] + " " + t().win);
+  }
+  if (state.b.every(Boolean)) return end(t().draw);
+  state.turn = state.turn === "X" ? "O" : "X"; setStatus(state.turn === "X" ? t().xTurn : t().oTurn);
+  if ($("mode").value === "ai" && state.turn === "O") {
+    timer = setTimeout(() => {
+      let empty = state.b.map((v, idx) => v ? null : idx).filter(v => v !== null);
+      let idx = empty[Math.floor(Math.random()*empty.length)];
+      state.b[idx] = "O"; renderTTT();
+      for (let a of [[0,1,2],[3,4,5],[6,7,8],[0,3,6],[1,4,7],[2,5,8],[0,4,8],[2,4,6]]) {
+        if (state.b[a[0]] && state.b[a[0]] === state.b[a[1]] && state.b[a[1]] === state.b[a[2]]) return end("O (AI) 獲勝！");
+      }
+      if (state.b.every(Boolean)) return end(t().draw);
+      state.turn = "X"; setStatus(t().xTurn);
+    }, 250);
+  }
+}
+
+/* 3. 四子棋 Connect Four */
+function initConnect() {
+  state = { b: Array.from({ length: 6 }, () => Array(7).fill(0)), turn: 1, over: false };
+  $("stage").innerHTML = '<div class="connect" id="connect"></div>';
+  for (let i = 0; i < 42; i++) {
+    let b = document.createElement("button");
+    b.onclick = () => cMove(i % 7);
+    $("connect").appendChild(b);
+  }
+  renderC(); setStatus(t().redTurn);
+}
+function renderC() {
+  [...$("connect").children].forEach((b, i) => {
+    let v = state.b[Math.floor(i / 7)][i % 7];
+    b.className = v === 1 ? "r" : v === 2 ? "y" : "";
+  });
+}
+function cMove(c) {
+  if (state.over || state.b[0][c] || (state.turn === 2 && $("mode").value === "ai")) return;
+  let r = 5; while (r >= 0 && state.b[r][c]) r--;
+  state.b[r][c] = state.turn; renderC();
+  if (boardWin(state.b, state.turn, 4, 6, 7)) return end((state.turn === 1 ? t().redTurn : t().yellowTurn) + " " + t().win);
+  state.turn = 3 - state.turn; setStatus(state.turn === 1 ? t().redTurn : t().yellowTurn);
+}
+
+/* 4. 翻牌記憶 Memory */
+function initMemory() {
+  let cards = ["🍎","🍌","🍇","🍉","🍒","🥝","🍋","🥑"];
+  let deck = [...cards, ...cards].sort(() => Math.random() - 0.5);
+  state = { deck, open: [], done: Array(16).fill(false), over: false, busy: false };
+  $("stage").innerHTML = '<div class="memory" id="memory"></div>';
+  deck.forEach((v, i) => {
+    let b = document.createElement("button");
+    b.onclick = () => memFlip(i);
+    $("memory").appendChild(b);
+  });
+  memRender(); setStatus(t().findPairs);
+}
+function memRender() {
+  [...$("memory").children].forEach((b, i) => {
+    let isOpen = state.open.includes(i) || state.done[i];
+    b.textContent = isOpen ? state.deck[i] : "?";
+    b.className = state.done[i] ? "done" : isOpen ? "open" : "";
+  });
+}
+function memFlip(i) {
+  if (state.over || state.busy || state.done[i] || state.open.includes(i)) return;
+  state.open.push(i); memRender();
+  if (state.open.length === 2) {
+    state.busy = true;
+    let [a, b] = state.open;
+    if (state.deck[a] === state.deck[b]) {
+      state.done[a] = state.done[b] = true; state.open = []; state.busy = false; memRender();
+      if (state.done.every(Boolean)) end(t().win);
+    } else {
+      timer = setTimeout(() => { state.open = []; state.busy = false; memRender(); }, 700);
+    }
+  }
+}
+
+/* 全域綁定與事件處理 */
+window.onload = () => {
+  loadPlayerStats();
+  $("splashStartBtn").onclick = () => {
+    $("splashScreen").classList.add("fade-out");
+    setTimeout(() => $("splashScreen").classList.add("hidden"), 500);
+  };
+  $("themeToggle").onclick = toggleTheme;
+  $("lang").onchange = (e) => setLang(e.target.value);
+  $("back").onclick = home;
+  $("restart").onclick = () => start(game, true);
+  $("rules").onclick = () => {
+    let gInfo = t().g[game];
+    if (gInfo) showModal(gInfo[1] + " - " + t().rules, gInfo[3], t().close, "");
+  };
+  renderHome();
+};
+</script>
+</body>
+</html>
